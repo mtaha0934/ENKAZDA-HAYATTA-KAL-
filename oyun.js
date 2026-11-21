@@ -2942,20 +2942,21 @@ panel(17.46, 0.125, 19.875, 0.125 + tk);   // banyo fayans duvar kaplaması (yen
     });
   }
   var EZW = { grp: null, cl: null, fe: false };
-  function ezClear() { if (EZW.grp) scene.remove(EZW.grp); if (EZW.cl) { scene.remove(EZW.cl); scene.remove(EZW.cl.target); } EZW.grp = EZW.cl = null; EZW.fe = false; EZW.rescued = false; VR.low = 0; if (window.EZ) EZ.dropHeld(); }
+  var EZCL = new THREE.SpotLight(0xDFE8FF, 0, 4.5, 0.4, 0.7); EZCL.castShadow = false; scene.add(EZCL); scene.add(EZCL.target);   // enkazdaki çatlak ışığı (kalıcı)
+  function ezClear() { if (EZW.grp) scene.remove(EZW.grp); if (EZW.cl) EZW.cl.intensity = 0; EZW.grp = EZW.cl = null; EZW.fe = false; EZW.rescued = false; VR.low = 0; if (window.EZ) EZ.dropHeld(); }
   function ezPlace(grp) { var c = Math.cos(walk.yaw), sn = Math.sin(walk.yaw), lx = 0.55, lz = 1.05;
     grp.rotation.y = walk.yaw; grp.position.set(walk.x - (lx * c + lz * sn), 0, walk.z - (-lx * sn + lz * c)); grp.updateMatrixWorld(true); EZW.yaw0 = walk.yaw; }
   function ezPrebuild() { if (!window.EZ) return; ezClear(); var grp = EZ.debris(); ezPlace(grp); scene.add(grp); EZW.grp = grp; EZ.collapseAt(0); renderer.shadowMap.needsUpdate = true; }
   function ezEnter() {
-    var pre = EZW.grp; if (pre) { if (EZW.cl) { scene.remove(EZW.cl); scene.remove(EZW.cl.target); EZW.cl = null; } EZW.fe = false; EZW.rescued = false; } else ezClear();
-    avClear(); setNight(true); hemi.color.set(0xB8BCC4); hemi.groundColor.set(0x55524E); hemi.intensity = 0.065; scene.background = new THREE.Color(0x0C0D0F); roomLights.visible = false; G.state = 'enkaz'; keys = {}; pad = {}; walk.pitch = -0.12;
+    var pre = EZW.grp; if (pre) { if (EZW.cl) { EZW.cl.intensity = 0; EZW.cl = null; } EZW.fe = false; EZW.rescued = false; } else ezClear();
+    avClear(); setNight(true); hemi.color.set(0xB8BCC4); hemi.groundColor.set(0x55524E); hemi.intensity = 0.012; scene.background = new THREE.Color(0x030304); roomLights.visible = false; G.state = 'enkaz'; keys = {}; pad = {}; walk.pitch = -0.12;
     var grp = pre; if (!grp) { grp = EZ.debris(); ezPlace(grp); scene.add(grp); EZW.grp = grp; } EZ.collapseAt(99); EZW.aim = false;
-    var cl = new THREE.SpotLight(0xDFE8FF, 1.1, 4.5, 0.4, 0.7); cl.position.copy(grp.localToWorld(new THREE.Vector3(1.35, 1.4, -0.7))); cl.target.position.copy(grp.localToWorld(new THREE.Vector3(0.9, 0, 0.3)));
-    cl.castShadow = true; scene.add(cl); scene.add(cl.target); EZW.cl = cl;
+    var cl = EZCL; cl.intensity = 1.1; cl.position.copy(grp.localToWorld(new THREE.Vector3(1.35, 1.4, -0.7))); cl.target.position.copy(grp.localToWorld(new THREE.Vector3(0.9, 0, 0.3)));
+    cl.target.updateMatrixWorld(); EZW.cl = cl;
     EZW.base = null;
     renderer.shadowMap.needsUpdate = true;
   }
-  function ezRescueLight() { EZW.rescued = true; if (EZW.cl) { EZW.cl.intensity = 1.5; } hemi.intensity = 0.3; renderer.shadowMap.needsUpdate = true; }
+  function ezRescueLight() { EZW.rescued = true; if (EZW.cl) { EZW.cl.intensity = 0.9; } hemi.intensity = 0.12; renderer.shadowMap.needsUpdate = true; }
   function goHome() {   // ilk sayfa: başlangıç ekranı
     avClear();
     if (VR.on && !VR.fake) { if (window.EZ) EZ.hide(); ezClear(); stageEl.classList.remove('ezon'); startDemo(); return; }   // VR'da ilk sayfa: deneme alanı
@@ -2982,7 +2983,7 @@ panel(17.46, 0.125, 19.875, 0.125 + tk);   // banyo fayans duvar kaplaması (yen
       endLater(3300, function () { parkCap.classList.add('on'); setTimeout(function () { parkCap.classList.add('show'); }, 30); });
     });
   }
-  window.EZ_HOST = { renderer: renderer, scene: scene, camera: camera, stage: stageEl, flash: function (on) { EZW.fe = !!on; if (EZW.cl && !EZW.rescued) EZW.cl.intensity = on ? 0.9 : 0.45; hemi.intensity = on ? 0.1 : 0.065; }, ctls: function () { return VR.ctl; }, canvas: renderer.domElement, xr: renderer.xr, bagModel: function () { try { return shBuildBag(); } catch (e) { return null; } }, rescue: ezRescueLight, aim: function (on) { EZW.aim = !!on; }, head: function (m) { vrHead(); m.multiplyMatrices(vrRig.matrixWorld, vrHM); }, toPark: ezToPark, results: function () { if (ENDQ.res) ENDQ.res(); }, again: function () { startDemo(); }, model: function (id) { try { return ITEM[id] ? buildItemMesh(ITEM[id]) : null; } catch (e) { return null; } }, vr: function () { return VR.on && !VR.fake ? VR.session : null; } };
+  window.EZ_HOST = { renderer: renderer, scene: scene, camera: camera, stage: stageEl, flash: function (on) { EZW.fe = !!on; if (EZW.cl && !EZW.rescued) EZW.cl.intensity = on ? 0.8 : 0.12; hemi.intensity = on ? 0.09 : 0.012; }, ctls: function () { return VR.ctl; }, canvas: renderer.domElement, xr: renderer.xr, bagModel: function () { try { return shBuildBag(); } catch (e) { return null; } }, rescue: ezRescueLight, aim: function (on) { EZW.aim = !!on; }, head: function (m) { vrHead(); m.multiplyMatrices(vrRig.matrixWorld, vrHM); }, toPark: ezToPark, results: function () { if (ENDQ.res) ENDQ.res(); }, again: function () { startDemo(); }, model: function (id) { try { return ITEM[id] ? buildItemMesh(ITEM[id]) : null; } catch (e) { return null; } }, vr: function () { return VR.on && !VR.fake ? VR.session : null; } };
   $('seeBtn').addEventListener('click', function () { parkCap.classList.remove('show'); setTimeout(function () { parkCap.classList.remove('on'); }, 400); if (ENDQ.res) ENDQ.res(); });
 
   function finishGame(timeUp, how) {
@@ -3292,7 +3293,21 @@ panel(17.46, 0.125, 19.875, 0.125 + tk);   // banyo fayans duvar kaplaması (yen
     AV.ring.material.opacity = 0.45 + 0.3 * Math.sin(AV.t * 5);
   }
   function avClear() { if (AV) { scene.remove(AV.g); AV = null; } }
+  /* ---------- TEST KISAYOLU (gizli): iki çubuğa birlikte bas / masaüstünde Shift+T ----------
+     evde: süre 6 saniyeye iner (avatar ve sarsıntı hemen gelir) · enkazda: kurtarmanın son aşamasına atlar */
+  var TSK = { was: false };
+  function testSkip() {
+    if (G.state === 'play') { if (G.left > 6) { G.left = 6; toast('TEST: süre 6 saniyeye indi'); } }
+    else if (G.state === 'enkaz' && window.EZ && EZ.testRescue) EZ.testRescue();
+  }
+  addEventListener('keydown', function (ev) { if (ev.shiftKey && (ev.key === 'T' || ev.key === 't')) testSkip(); });
+  function testSkipVR() {
+    if (!VR.on) return; var n = 0;
+    VR.ctl.forEach(function (c) { var gp = c.src && c.src.gamepad; if (gp && gp.buttons[3] && gp.buttons[3].pressed) n++; });
+    var both = n >= 2; if (both && !TSK.was) testSkip(); TSK.was = both;
+  }
   function gameTick(dt) {
+    testSkipVR();
     avTick(dt);
     if (G.state === 'play' || G.state === 'demo') physFrame(dt);
     if (G.state === 'demo') {
