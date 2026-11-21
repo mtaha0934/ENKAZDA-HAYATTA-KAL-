@@ -1635,7 +1635,11 @@ panel(17.46, 0.125, 19.875, 0.125 + tk);   // banyo fayans duvar kaplaması (yen
     flash.intensity = (NIGHT && ((HARD && G.bag.indexOf('feneri') >= 0) || (G.state === 'enkaz' && EZW.fe)) && G.state !== 'idle' && G.state !== 'park') ? (G.state === 'enkaz' ? 2.2 : 3.4) : 0;
     if (VR.on) vrUpdate(dt);
     if (mode === 'walk') { if (!VR.on) updateWalk(dt); if (G.state === 'quake') quakeShake(dt); } else if (mode === 'park') parkFrame(dt); else placeLabels();
-    if (G.state === 'enkaz' && window.EZ) { if (!VR.on) camera.position.y = 0.5; EZ.frame(dt); }
+    if (G.state === 'enkaz' && window.EZ) {
+      if (!VR.on) { camera.position.y = 0.5; if (EZW.aim) { var kk = Math.min(1, dt * 1.6); walk.pitch += (0.78 - walk.pitch) * kk; var dyw = Math.atan2(Math.sin(EZW.yaw0 - walk.yaw), Math.cos(EZW.yaw0 - walk.yaw)); walk.yaw += dyw * kk; } }
+      else { var hy = vrHM.elements[13]; if (EZW.base == null && hy > 0.2) EZW.base = 0.55 - hy; if (EZW.base != null) { var eye = Math.min(0.75, Math.max(0.35, hy + EZW.base)); VR.low = eye - hy; } }
+      EZ.frame(dt);
+    }
     gameTick(dt); glowTick(dt); showTick(dt);
     if (VR.on) vrFinish(dt);
     renderer.render(scene, camera);
@@ -1674,6 +1678,7 @@ panel(17.46, 0.125, 19.875, 0.125 + tk);   // banyo fayans duvar kaplaması (yen
     { id: 'su2', n: 'Su (2. paket)', e: '💧', cls: 'extra', pts: 0, c: 0x3E8EDB, room: 'mutfak' },
     { id: 'su3', n: 'Su (3. paket)', e: '💧', cls: 'extra', pts: 0, c: 0x3E8EDB, rooms: ['mutfak', 'salon'] },
     { id: 'konserve2', n: 'Konserve ve paketli gıda (2. paket)', e: '🥫', cls: 'extra', pts: 0, c: 0xC8832F, room: 'mutfak' },
+    { id: 'pil2', n: 'Yedek piller (2. paket)', e: '🔋', cls: 'extra', pts: 0, c: 0x3FA34D, rooms: ['salon', 'yatak', 'cocuk', 'hol'] },
     { id: 'enerji2', n: 'Enerji barı ve kuru meyve (2. paket)', e: '🍫', cls: 'extra', pts: 0, c: 0xD9A441, rooms: ['mutfak', 'salon', 'cocuk'] }
   ];
   var ITEM = {};
@@ -1883,7 +1888,7 @@ panel(17.46, 0.125, 19.875, 0.125 + tk);   // banyo fayans duvar kaplaması (yen
   itemModel('maske', 'ob_maske', 0.15, 0, true);
 
 
-  ['su2', 'su3', 'konserve2', 'enerji2'].forEach(function (id) { BUILD[id] = BUILD[id.replace(/\d$/, '')]; });
+  ['su2', 'su3', 'konserve2', 'enerji2', 'pil2'].forEach(function (id) { BUILD[id] = BUILD[id.replace(/\d$/, '')]; });
   var ITEM_K = 1.4;
   function buildItemMesh(it) {
     var grp = new THREE.Group();
@@ -2856,7 +2861,8 @@ panel(17.46, 0.125, 19.875, 0.125 + tk);   // banyo fayans duvar kaplaması (yen
     var mat = new THREE.MeshStandardMaterial({ color: new THREE.Color(0x8A847A).convertSRGBToLinear(), roughness: 1 }), mat2 = new THREE.MeshStandardMaterial({ color: new THREE.Color(0xA59C8E).convertSRGBToLinear(), roughness: 1 });
     var fx = -Math.sin(walk.yaw), fz = -Math.cos(walk.yaw), rx = Math.cos(walk.yaw), rz = -Math.sin(walk.yaw);
     function at(side, fwd) { return [walk.x + rx * side + fx * fwd, walk.z + rz * side + fz * fwd]; }
-    [[0, 1.75, 2.2, 1.4, 1.0, 0.3, -0.1, 3.3], [-1.75, 0.3, 1.5, 1.6, 0.85, -0.08, 0.5, 3.75], [1.8, 0.4, 1.4, 1.5, 0.9, 0.12, -0.55, 4.1], [0.2, -1.7, 1.8, 1.2, 0.7, -0.5, 0.2, 4.45], [0.15, 0.2, 2.6, 2.4, 1.55, 0.06, -0.08, 4.7]].forEach(function (q) {
+    ezPrebuild();   // uyanınca görülecek enkaz şimdi kurulur ve sarsıntıda yerine düşer
+    [].forEach(function (q) {
       var p = at(q[0], q[1]), m = new THREE.Mesh(new THREE.BoxGeometry(q[2], 0.18, q[3], 6, 1, 6), mat); m.castShadow = true; m.receiveShadow = true;
       m.position.set(p[0], H - 0.1, p[1]); m.rotation.y = walk.yaw + (Math.random() - 0.5) * 0.6; scene.add(m); QC.objs.push(m);
       QC.slabs.push({ m: m, y1: q[4], rx: q[5], rz: q[6], t0: q[7], hit: false });
@@ -2868,6 +2874,7 @@ panel(17.46, 0.125, 19.875, 0.125 + tk);   // banyo fayans duvar kaplaması (yen
   }
   function qcStep(t, dt) {
     if (!QC) return;
+    if (EZW.grp && window.EZ) { var nl = EZ.collapseAt(t); if (nl) qcCrash(Math.min(1, 0.5 + nl * 0.15)); }
     QC.slabs.forEach(function (q) { var k = Math.min(1, Math.max(0, (t - q.t0) / 0.45)); if (k <= 0) return; var e = k * k; q.m.position.y = (H - 0.1) + (q.y1 - (H - 0.1)) * e; q.m.rotation.x = q.rx * e; q.m.rotation.z = q.rz * e; if (k >= 1 && !q.hit) { q.hit = true; qcCrash(0.7 + Math.random() * 0.3); } });
     QC.bits.forEach(function (b) { if (t < b.t0 || b.m.position.y <= b.s * 0.5) return; b.v += 9.8 * dt; b.m.position.y = Math.max(b.s * 0.5, b.m.position.y - b.v * dt); b.m.rotation.x += dt * 4; });
     var L = QC.lamp; if (L && !L.done && t > L.t0) { var i = SWAY.indexOf(L.sw); if (i >= 0) SWAY.splice(i, 1); L.v += 9.8 * dt; L.g.position.y -= L.v * dt; if (!L.off) { var dx = L.g.position.x - walk.x, dz = L.g.position.z - walk.z, dd = Math.hypot(dx, dz) || 1; L.off = dd < 1.0 ? [dx / dd * (1.0 - dd), dz / dd * (1.0 - dd)] : [0, 0]; } L.g.position.x += L.off[0] * dt * 2; L.g.position.z += L.off[1] * dt * 2; L.g.rotation.z += dt * 4; L.g.rotation.x += dt * 2.5;
@@ -2918,7 +2925,7 @@ panel(17.46, 0.125, 19.875, 0.125 + tk);   // banyo fayans duvar kaplaması (yen
       rumbleStop(); camera.rotation.z = 0;
       if (window.EZ) {   // bulunduğun odada, aynı mobilyaların arasında enkaz altında gözünü aç (masaüstü ve VR)
         var RID = { salon: 'sal', mutfak: 'mut', yatak: 'yat', cocuk: 'coc', banyo: 'ban', hol: 'hol', balkon: 'sal' }[roomOf(walk.x, walk.z)] || 'hol';
-        var MAPB = { su: 'su', su2: 'su', su3: 'su', konserve: 'kon', konserve2: 'kon', enerji: 'bar', enerji2: 'bar', duduk: 'du', feneri: 'fe', maske: 'ma', islakmendil: 'pec', pecete: 'pec', battaniye: 'bat' };
+        var MAPB = { su: 'su', su2: 'su', su3: 'su', konserve: 'kon', konserve2: 'kon', enerji: 'bar', enerji2: 'bar', duduk: 'du', feneri: 'fe', maske: 'ma', islakmendil: 'pec', pecete: 'pec', battaniye: 'bat', pil: 'pil', pil2: 'pil' };
         hudEl.classList.remove('on'); crossEl.classList.remove('on'); padEl.hidden = true; stageEl.classList.add('ezon');
         fadeEl.style.transition = 'none'; fadeEl.style.opacity = '0';
         ezEnter();
@@ -2936,16 +2943,19 @@ panel(17.46, 0.125, 19.875, 0.125 + tk);   // banyo fayans duvar kaplaması (yen
   }
   var EZW = { grp: null, cl: null, fe: false };
   function ezClear() { if (EZW.grp) scene.remove(EZW.grp); if (EZW.cl) { scene.remove(EZW.cl); scene.remove(EZW.cl.target); } EZW.grp = EZW.cl = null; EZW.fe = false; EZW.rescued = false; VR.low = 0; if (window.EZ) EZ.dropHeld(); }
+  function ezPlace(grp) { var c = Math.cos(walk.yaw), sn = Math.sin(walk.yaw), lx = 0.55, lz = 1.05;
+    grp.rotation.y = walk.yaw; grp.position.set(walk.x - (lx * c + lz * sn), 0, walk.z - (-lx * sn + lz * c)); grp.updateMatrixWorld(true); EZW.yaw0 = walk.yaw; }
+  function ezPrebuild() { if (!window.EZ) return; ezClear(); var grp = EZ.debris(); ezPlace(grp); scene.add(grp); EZW.grp = grp; EZ.collapseAt(0); renderer.shadowMap.needsUpdate = true; }
   function ezEnter() {
-    ezClear(); avClear(); setNight(true); hemi.color.set(0xB8BCC4); hemi.groundColor.set(0x55524E); hemi.intensity = 0.1; scene.background = new THREE.Color(0x121316); roomLights.visible = false; G.state = 'enkaz'; keys = {}; pad = {}; walk.pitch = -0.12;
-    var grp = EZ.debris(), c = Math.cos(walk.yaw), sn = Math.sin(walk.yaw), lx = 0.55, lz = 1.05;
-    grp.rotation.y = walk.yaw; grp.position.set(walk.x - (lx * c + lz * sn), 0, walk.z - (-lx * sn + lz * c)); scene.add(grp); grp.updateMatrixWorld(true); EZW.grp = grp;
+    var pre = EZW.grp; if (pre) { if (EZW.cl) { scene.remove(EZW.cl); scene.remove(EZW.cl.target); EZW.cl = null; } EZW.fe = false; EZW.rescued = false; } else ezClear();
+    avClear(); setNight(true); hemi.color.set(0xB8BCC4); hemi.groundColor.set(0x55524E); hemi.intensity = 0.065; scene.background = new THREE.Color(0x0C0D0F); roomLights.visible = false; G.state = 'enkaz'; keys = {}; pad = {}; walk.pitch = -0.12;
+    var grp = pre; if (!grp) { grp = EZ.debris(); ezPlace(grp); scene.add(grp); EZW.grp = grp; } EZ.collapseAt(99); EZW.aim = false;
     var cl = new THREE.SpotLight(0xDFE8FF, 1.1, 4.5, 0.4, 0.7); cl.position.copy(grp.localToWorld(new THREE.Vector3(1.35, 1.4, -0.7))); cl.target.position.copy(grp.localToWorld(new THREE.Vector3(0.9, 0, 0.3)));
     cl.castShadow = true; scene.add(cl); scene.add(cl.target); EZW.cl = cl;
-    if (VR.on) VR.low = -1.0;
+    EZW.base = null;
     renderer.shadowMap.needsUpdate = true;
   }
-  function ezRescueLight() { EZW.rescued = true; if (EZW.cl) { EZW.cl.intensity = 4; EZW.cl.angle = 0.7; EZW.cl.distance = 8; } hemi.intensity = 0.25; renderer.shadowMap.needsUpdate = true; }
+  function ezRescueLight() { EZW.rescued = true; if (EZW.cl) { EZW.cl.intensity = 1.5; } hemi.intensity = 0.3; renderer.shadowMap.needsUpdate = true; }
   function goHome() {   // ilk sayfa: başlangıç ekranı
     avClear();
     if (VR.on && !VR.fake) { if (window.EZ) EZ.hide(); ezClear(); stageEl.classList.remove('ezon'); startDemo(); return; }   // VR'da ilk sayfa: deneme alanı
@@ -2972,7 +2982,7 @@ panel(17.46, 0.125, 19.875, 0.125 + tk);   // banyo fayans duvar kaplaması (yen
       endLater(3300, function () { parkCap.classList.add('on'); setTimeout(function () { parkCap.classList.add('show'); }, 30); });
     });
   }
-  window.EZ_HOST = { renderer: renderer, scene: scene, camera: camera, stage: stageEl, flash: function (on) { EZW.fe = !!on; if (EZW.cl && !EZW.rescued) EZW.cl.intensity = on ? 1.1 : 0.7; hemi.intensity = on ? 0.13 : 0.1; }, ctls: function () { return VR.ctl; }, bagModel: function () { try { return shBuildBag(); } catch (e) { return null; } }, rescue: ezRescueLight, head: function (m) { vrHead(); m.multiplyMatrices(vrRig.matrixWorld, vrHM); }, toPark: ezToPark, results: function () { if (ENDQ.res) ENDQ.res(); }, again: function () { startDemo(); }, model: function (id) { try { return ITEM[id] ? buildItemMesh(ITEM[id]) : null; } catch (e) { return null; } }, vr: function () { return VR.on && !VR.fake ? VR.session : null; } };
+  window.EZ_HOST = { renderer: renderer, scene: scene, camera: camera, stage: stageEl, flash: function (on) { EZW.fe = !!on; if (EZW.cl && !EZW.rescued) EZW.cl.intensity = on ? 0.9 : 0.45; hemi.intensity = on ? 0.1 : 0.065; }, ctls: function () { return VR.ctl; }, canvas: renderer.domElement, xr: renderer.xr, bagModel: function () { try { return shBuildBag(); } catch (e) { return null; } }, rescue: ezRescueLight, aim: function (on) { EZW.aim = !!on; }, head: function (m) { vrHead(); m.multiplyMatrices(vrRig.matrixWorld, vrHM); }, toPark: ezToPark, results: function () { if (ENDQ.res) ENDQ.res(); }, again: function () { startDemo(); }, model: function (id) { try { return ITEM[id] ? buildItemMesh(ITEM[id]) : null; } catch (e) { return null; } }, vr: function () { return VR.on && !VR.fake ? VR.session : null; } };
   $('seeBtn').addEventListener('click', function () { parkCap.classList.remove('show'); setTimeout(function () { parkCap.classList.remove('on'); }, 400); if (ENDQ.res) ENDQ.res(); });
 
   function finishGame(timeUp, how) {
@@ -3251,10 +3261,13 @@ panel(17.46, 0.125, 19.875, 0.125 + tk);   // banyo fayans duvar kaplaması (yen
   }
   /* ---------- çök-kapan-tutun avatarı ---------- */
   var AV = null;
-  var AV_SPOT = { salon: [13.0, 8.55], mutfak: [16.55, 7.4], yatak: [13.2, 1.4], cocuk: [15.95, 1.5], banyo: [18.65, 1.2], hol: [14.6, 4.55], balkon: [13.0, 8.55] };
+  // [x, z, yön] — sağlam eşyanın yanında, pencere ve kapıdan uzak; yön: avatarın baktığı taraf (sırtı eşyaya)
+  var AV_SPOT = { salon: [13.0, 8.4, 0], mutfak: [16.35, 7.4, -Math.PI / 2], yatak: [13.25, 1.3, Math.PI / 2], cocuk: [15.95, 1.3, -Math.PI / 2], banyo: [18.65, 1.3, 0], hol: [15.3, 4.7, Math.PI / 2], balkon: [13.0, 8.4, 0] };
+  function avFree(x, z) { var r = 0.3; for (var i = 0; i < colliders.length; i++) { var c = colliders[i]; if (x > c.x0 - r && x < c.x1 + r && z > c.z0 - r && z < c.z1 + r) return false; } return true; }
+  function avFind(x, z) { if (avFree(x, z)) return [x, z]; for (var d = 0.1; d <= 0.8; d += 0.1) for (var a = 0; a < 6.28; a += 0.4) { var px = x + Math.cos(a) * d, pz = z + Math.sin(a) * d; if (avFree(px, pz)) return [px, pz]; } return [x, z]; }
   function avPart(w, h, d, col, py) { var g = new THREE.Group(), m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({ color: new THREE.Color(col).convertSRGBToLinear(), roughness: 0.75 })); m.position.y = py; m.castShadow = true; g.add(m); return g; }
   function avSpawn() {
-    var rid = roomOf(walk.x, walk.z), sp = AV_SPOT[rid] || AV_SPOT.hol, g = new THREE.Group();
+    var rid = roomOf(walk.x, walk.z), s0 = AV_SPOT[rid] || AV_SPOT.hol, sp = avFind(s0[0], s0[1]), g = new THREE.Group();
     var skin = 0xE2B08A, cloth = 0xE2640B, jean = 0x35507A, hair = 0x3A2A1E;
     var hips = new THREE.Group(); hips.position.y = 0.6; g.add(hips);
     var torso = avPart(0.3, 0.4, 0.17, cloth, 0.2); hips.add(torso);
@@ -3266,7 +3279,7 @@ panel(17.46, 0.125, 19.875, 0.125 + tk);   // banyo fayans duvar kaplaması (yen
     var legs = [-1, 1].map(function (sd) { var th = new THREE.Group(); th.position.set(sd * 0.08, 0, 0); hips.add(th); th.add(avPart(0.11, 0.3, 0.12, jean, -0.15));
       var kn = new THREE.Group(); kn.position.y = -0.3; th.add(kn); kn.add(avPart(0.1, 0.28, 0.11, jean, -0.14)); var ft = avPart(0.1, 0.05, 0.18, 0x2B2B2B, -0.3); ft.children[0].position.z = 0.04; kn.add(ft); return { th: th, kn: kn }; });
     var ring = new THREE.Mesh(new THREE.RingGeometry(0.42, 0.5, 40), new THREE.MeshBasicMaterial({ color: 0x22C55E, transparent: true, opacity: 0.7, depthWrite: false })); ring.rotation.x = -Math.PI / 2; ring.position.y = 0.012; g.add(ring);
-    g.position.set(sp[0], 0, sp[1]); g.rotation.y = Math.atan2(walk.x - sp[0], walk.z - sp[1]); scene.add(g);
+    g.position.set(sp[0], 0, sp[1]); g.rotation.y = s0[2]; scene.add(g);
     AV = { g: g, t: 0, hips: hips, torso: torso, head: head, arms: arms, legs: legs, ring: ring };
     toast('ÇÖK, KAPAN, TUTUN! Sağlam bir eşyanın yanına çök.');
   }
