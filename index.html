@@ -1,0 +1,303 @@
+<title>Enkazda Hayatta Kal</title>
+
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  .credits{margin-top:14px;font-size:11px;color:var(--muted,#6b7a85);line-height:1.5}.credits summary{cursor:pointer}.credits p{margin:6px 0 0}
+  /* Yerleşim: üstte başlık ve görünüm seçici, ortada 3B sahne, altta odalara git şeridi.
+     Renkler mimari çizim gibi soğuk gri; tek vurgu rengi acil durum turuncusu. */
+  :root {
+    --bg: #EEF1F3;
+    --panel: #FFFFFF;
+    --ink: #17222B;
+    --muted: #586671;
+    --line: #D2D9DE;
+    --accent: #C2410C;
+    --accent-ink: #FFFFFF;
+    --stage: #DEE4E8;
+    --chip: #F6F8F9;
+    --label-bg: rgba(255, 255, 255, 0.9);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0F1519;
+      --panel: #172027;
+      --ink: #E7EDF1;
+      --muted: #93A2AD;
+      --line: #2A363F;
+      --accent: #FB923C;
+      --accent-ink: #1F1208;
+      --stage: #0B1013;
+      --chip: #1C262D;
+      --label-bg: rgba(23, 32, 39, 0.9);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0F1519;
+    --panel: #172027;
+    --ink: #E7EDF1;
+    --muted: #93A2AD;
+    --line: #2A363F;
+    --accent: #FB923C;
+    --accent-ink: #1F1208;
+    --stage: #0B1013;
+    --chip: #1C262D;
+    --label-bg: rgba(23, 32, 39, 0.9);
+    color-scheme: dark;
+  }
+
+  html, body { height: 100%; }
+  body {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-block: 12px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    background: var(--bg);
+    color: var(--ink);
+    font: 14px/1.45 "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  button { font: inherit; color: inherit; }
+  button:focus-visible, canvas:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; }
+  h1 { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: -0.01em; text-wrap: balance; }
+  .sub { margin: 2px 0 0; color: var(--muted); font: 500 12px "IBM Plex Mono", ui-monospace, Menlo, monospace; }
+
+  .seg { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--panel); }
+  .seg button { appearance: none; border: 0; background: transparent; padding: 9px 14px; font-weight: 500; font-size: 13px; line-height: 1; cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+
+  .stage { position: relative; flex: 1; min-height: 240px; overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: var(--stage); }
+  #c { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; outline: none; }
+  #c:active { cursor: grabbing; }
+
+  #labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .lbl { position: absolute; left: 0; top: 0; padding: 2px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--label-bg); font-size: 11px; line-height: 1.25; text-align: center; white-space: nowrap; will-change: transform; }
+  .lbl b { display: block; font-weight: 600; }
+  .lbl i { font: 500 10.5px "IBM Plex Mono", ui-monospace, Menlo, monospace; font-style: normal; color: var(--muted); }
+  .lbl.dim { padding: 0; border: 0; background: transparent; color: var(--muted); font: 500 11px "IBM Plex Mono", ui-monospace, Menlo, monospace; letter-spacing: 0.04em; }
+
+  .hint { position: absolute; top: 10px; left: 10px; max-width: calc(100% - 20px); padding: 6px 9px; border: 1px solid var(--line); border-radius: 6px; background: var(--label-bg); color: var(--muted); font-size: 12px; }
+  .stage.with-toggle .hint { max-width: calc(100% - 150px); }
+  .toggle { position: absolute; top: 10px; right: 10px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--label-bg); font-size: 12px; font-weight: 500; cursor: pointer; }
+  .toggle[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+
+  .dpad { position: absolute; right: 10px; bottom: 10px; display: grid; grid-template-columns: repeat(3, 46px); gap: 6px; user-select: none; -webkit-user-select: none; touch-action: none; }
+  .dpad button { width: 46px; height: 46px; padding: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--label-bg); font-size: 18px; line-height: 1; touch-action: none; }
+  .dpad button:active { background: var(--accent); color: var(--accent-ink); }
+
+  .rooms { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin; }
+  .chip { flex: none; display: flex; align-items: baseline; gap: 6px; padding: 7px 11px; border: 1px solid var(--line); border-radius: 8px; background: var(--chip); font-size: 13px; font-weight: 500; white-space: nowrap; cursor: pointer; }
+  .chip .a { color: var(--muted); font: 500 11px "IBM Plex Mono", ui-monospace, Menlo, monospace; }
+  .chip[aria-current="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+
+  @media (max-width: 520px) {
+    .seg { width: 100%; }
+    .seg button { flex: 1; padding: 10px 6px; }
+  }
+
+  /* ---------- oyun ---------- */
+  .seg, .rooms, .toggle { display: none !important; }
+  .hud { position: absolute; top: 10px; left: 10px; right: 10px; display: none; justify-content: space-between; align-items: flex-start; gap: 8px; pointer-events: none; }
+  .hud.on { display: flex; }
+  .pill { pointer-events: auto; display: flex; align-items: baseline; gap: 6px; padding: 7px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--label-bg); font-weight: 600; }
+  .pill .big { font: 600 22px "IBM Plex Mono", ui-monospace, Menlo, monospace; font-variant-numeric: tabular-nums; }
+  .pill.warn { border-color: #DC2626; color: #DC2626; }
+  .pill small { color: var(--muted); font-weight: 500; font-size: 12px; }
+  .hud button.pill { cursor: pointer; }
+  .cross { position: absolute; left: 50%; top: 50%; width: 10px; height: 10px; margin: -5px 0 0 -5px; border: 2px solid rgba(255,255,255,0.9); border-radius: 50%; box-shadow: 0 0 0 1px rgba(0,0,0,0.45); pointer-events: none; display: none; }
+  .cross.on { display: block; }
+  .cross.hot { background: var(--accent); border-color: var(--accent); transform: scale(1.5); }
+  .prompt { position: absolute; left: 50%; top: calc(50% + 26px); transform: translateX(-50%); padding: 5px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--label-bg); font-size: 13px; font-weight: 600; white-space: nowrap; pointer-events: none; display: none; }
+  .prompt.on { display: block; }
+  .prompt span { color: var(--muted); font-weight: 500; }
+  .toast { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); padding: 6px 12px; border-radius: 8px; background: var(--ink); color: var(--bg); font-size: 13px; font-weight: 600; opacity: 0; transition: opacity .2s; pointer-events: none; max-width: calc(100% - 140px); text-align: center; }
+  .toast.on { opacity: 1; }
+  .alertbox { position: absolute; left: 50%; top: 14%; transform: translateX(-50%); width: min(640px, calc(100% - 24px)); padding: 16px 22px 18px; border-radius: 16px; background: linear-gradient(180deg, #DC2626, #B91C1C); color: #fff; text-align: center; box-shadow: 0 0 0 4px rgba(255,255,255,0.85), 0 14px 40px rgba(185,28,28,0.55); display: none; pointer-events: none; z-index: 20; animation: alertPulse 0.9s ease-in-out infinite; }
+  .fade { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; z-index: 40; }
+  .langrow { display: none !important; }
+  #stage.ezon #dpad, #stage.ezon .hud, #stage.ezon .cross { display: none !important; }
+  #ez_root { position: absolute; inset: 0; z-index: 25; pointer-events: none; color: #eef1f5; font-family: Inter, "IBM Plex Sans", system-ui, sans-serif; }
+  #ez_root button { pointer-events: auto; font: 600 15px Inter, system-ui, sans-serif; min-height: 46px; padding: 0 16px; border-radius: 12px; border: 0; cursor: pointer; background: #f4f1ea; color: #13233a; }
+  #ez_root button:disabled { opacity: .35; cursor: not-allowed; } #ez_root button.sig { background: #E2640B; color: #fff; }
+  #ez_root.intro .ezhud, #ez_root.intro .ezacts, #ez_root.intro .ezvw { visibility: hidden; }
+  .ezhud { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; }
+  .ezmeters, .ezinfo { background: rgba(11,13,18,.85); border-radius: 12px; padding: 10px 14px; font-size: 14px; }
+  .ezmeters { width: min(300px, 100%); } .ezinfo { margin-left: auto; } .ezinfo div { white-space: nowrap; }
+  .ezm { display: grid; grid-template-columns: 70px minmax(0,1fr) 36px; gap: 8px; align-items: center; margin: 4px 0; }
+  .ezbar { height: 10px; border-radius: 6px; background: #2a2f38; overflow: hidden; } .ezbar i { display: block; height: 100%; border-radius: 6px; transition: width .2s; }
+  .ezm b { text-align: right; font-variant-numeric: tabular-nums; }
+  .ezsteps { display: flex; gap: 5px; margin-top: 6px; } .ezsteps span { width: 34px; height: 8px; border-radius: 4px; background: #2a2f38; } .ezsteps span.on { background: #3fc46a; }
+  .ezbag { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: auto; background: rgba(0,0,0,.35); }
+  .ezbagbox { background: #f7f5f0; color: #13233a; border-radius: 16px; padding: 18px 20px; width: min(480px, 94%); max-height: 80%; overflow: auto; }
+  .ezbagbox h3 { margin: 0 0 10px; font: 700 22px Inter, system-ui, sans-serif; } .ezbagbox ul { list-style: none; margin: 0 0 12px; padding: 0; }
+  .ezbagbox li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #e3e0d8; font-size: 15px; }
+  .ezbagbox em { color: #b45309; font-style: normal; font-size: 13px; } #ez_root .ezbagbox button { min-height: 40px; background: #13233a; color: #fff; } #ez_root .ezbagbox button:disabled { background: #9aa3ad; }
+  #ez_root .ezbagbox button.pri { background: #E2640B; }
+  .ezvw { display: none !important; position: absolute; top: 150px; left: 12px; display: flex; flex-direction: column; gap: 6px; } #ez_root .ezvw button { min-height: 38px; font-size: 13px; background: rgba(255,255,255,.85); }
+  .ezcall { position: absolute; top: 36%; left: 50%; transform: translate(-50%,-50%); font: 700 clamp(22px,3.4vw,36px)/1.15 Inter, system-ui, sans-serif; text-align: center; text-shadow: 0 2px 12px #000; display: none; width: 90%; }
+  .ezcall small { display: block; font: 500 16px Inter, system-ui, sans-serif; margin-top: 6px; color: #ffd7b8; }
+  .ezmsg { position: absolute; bottom: 92px; left: 50%; transform: translateX(-50%); background: rgba(11,13,18,.9); padding: 8px 16px; border-radius: 10px; font-size: 15px; max-width: 92%; text-align: center; opacity: 0; transition: opacity .3s; }
+  .ezacts { position: absolute; bottom: 12px; left: 12px; right: 12px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .ezfade { position: absolute; inset: 0; background: #000; opacity: 0; display: flex; align-items: center; justify-content: center; }
+  .ezfade div { color: #e9e4da; font: 600 clamp(20px,3vw,30px) Inter, system-ui, sans-serif; opacity: 0; transition: opacity 1s; text-align: center; padding: 20px; }
+  .ezov { position: absolute; inset: 0; background: rgba(13,15,20,.9); display: none; align-items: center; justify-content: center; padding: 20px; pointer-events: auto; }
+  .ezbox { background: #f7f5f0; color: #13233a; border-radius: 16px; padding: 24px; max-width: 560px; width: 100%; } .ezbox h3 { font: 700 26px/1.1 Inter, system-ui, sans-serif; margin: 0 0 8px; } .ezbox p { margin: 0 0 14px; color: #3b4b60; }
+  #ez_root .ezbox button.pri { background: #E2640B; color: #fff; } .ezbox .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  @media (max-width: 600px) { .ezinfo { margin-left: 0; } #ez_root .ezacts button { flex: 1 1 40%; padding: 0 8px; font-size: 14px; } .ezmsg { bottom: 150px; } .ezvw { top: auto; bottom: 130px; } }
+  .parkcap { position: absolute; left: 50%; bottom: 7%; transform: translateX(-50%); z-index: 20; display: none; flex-direction: column; align-items: center; gap: 12px; width: min(560px, calc(100% - 24px)); text-align: center; opacity: 0; transition: opacity 1.2s ease; }
+  .parkcap.on { display: flex; }
+  .parkcap.show { opacity: 1; }
+  .parkcap span { padding: 8px 16px; border-radius: 10px; background: rgba(15,23,42,0.72); color: #fff; font-weight: 600; font-size: clamp(14px, 2.4vw, 18px); text-wrap: balance; }
+  .parkcap .btn { padding: 14px 30px; font-size: 18px; background: #E2640B; color: #fff; box-shadow: 0 8px 24px rgba(0,0,0,0.35); }
+  .alertbox.on { display: none !important; }   /* deprem uyarısı yazısı kaldırıldı (ses kaydı çalmaya devam eder) */
+  .alertbox b { display: block; font: 800 15px "IBM Plex Mono", ui-monospace, Menlo, monospace; letter-spacing: 0.18em; opacity: 0.95; }
+  .alertbox strong { display: block; margin: 6px 0 4px; font-size: clamp(24px, 4.2vw, 38px); line-height: 1.12; letter-spacing: -0.01em; text-wrap: balance; }
+  .alertbox span { display: block; font-size: clamp(15px, 2.2vw, 19px); font-weight: 600; }
+  @keyframes alertPulse { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.22); } }
+
+  #startSheet, #res1, #res2 { --chip: #F1F6F9; --stage: #E3ECF1; --bg: #F4F8FB; --panel: #FFFFFF; --ink: #17303F; --muted: #5B7080; --line: #D5E2EA; --accent: #E0620F; --accent-ink: #FFFFFF; --label-bg: rgba(255,255,255,0.93); color-scheme: light; }
+  .sheet { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; padding: 12px; background: color-mix(in srgb, var(--bg) 82%, transparent); overflow: auto; }
+  #startSheet, #res1, #res2 { background: rgba(232, 244, 251, 0.9); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
+  .sheet.on { display: flex; }
+  .card { width: min(780px, 100%); max-height: 100%; overflow: auto; padding: 18px; border: 1px solid var(--line); border-radius: 18px; background: var(--panel); border-top: 5px solid #F59E0B; box-shadow: 0 12px 34px rgba(40,90,120,0.18); color: var(--ink); }
+  .brandrow { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 0 0 8px; }
+  .brandrow h2 { margin: 0; text-align: center; }
+  .brandrow img { height: 64px; width: auto; flex: none; }
+  @media (max-width: 480px) { .brandrow img { height: 44px; } }
+  .card h2 { margin: 0 0 4px; font-size: 20px; letter-spacing: -0.01em; text-wrap: balance; }
+  .card p { margin: 6px 0; color: var(--muted); font-size: 15px; }
+  .card ul.how { margin: 10px 0 14px; padding-left: 18px; }
+  .card ul.how li { margin: 5px 0; font-size: 15px; }
+  .btn { appearance: none; border: 0; border-radius: 8px; padding: 11px 16px; background: var(--accent); color: var(--accent-ink); font-weight: 600; cursor: pointer; }
+  .btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .list { list-style: none; margin: 10px 0 0; padding: 0; border-top: 1px solid var(--line); }
+  .list li { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--line); }
+  .list li { font-size: 17px; padding: 6px 10px; margin: 4px 0; border: 1px solid transparent; border-radius: 10px; }
+  .list li.ok { background: color-mix(in srgb, #16A34A 16%, var(--panel)); border-color: color-mix(in srgb, #16A34A 55%, transparent); }
+  .list li.todo { background: color-mix(in srgb, #F59E0B 24%, var(--panel)); border-color: color-mix(in srgb, #F59E0B 70%, transparent); }
+  .list li.bad { background: color-mix(in srgb, #DC2626 17%, var(--panel)); border-color: color-mix(in srgb, #DC2626 60%, transparent); }
+  .list li.ok .mk { color: #15803D; } .list li.bad .mk { color: #DC2626; }
+  .list .mk { font: 700 22px system-ui, sans-serif; min-width: 54px; text-align: right; }
+  .list .mk small { font: 600 12px system-ui, sans-serif; }
+  .list img.ic { width: 54px; height: 54px; flex: none; object-fit: contain; border-radius: 8px; background: color-mix(in srgb, var(--bg) 70%, transparent); }
+  .card .sec { font-size: 15px; margin-top: 16px; }
+  .list .em { width: 26px; text-align: center; font-size: 18px; }
+  .list .nm { flex: 1; min-width: 0; }
+  .list .pt { font: 600 13px "IBM Plex Mono", ui-monospace, Menlo, monospace; font-variant-numeric: tabular-nums; }
+  .list .pos { color: #15803D; } .list .neg { color: #DC2626; } .list .miss { color: var(--muted); }
+  .list li.missed .nm { color: inherit; }
+  .list button { appearance: none; border: 1px solid var(--line); background: transparent; border-radius: 6px; padding: 3px 8px; cursor: pointer; font-size: 12px; }
+  .total { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 10px 0 2px; padding: 10px 12px; border-radius: 10px; background: var(--chip); }
+  .total .big { font: 600 30px "IBM Plex Mono", ui-monospace, Menlo, monospace; }
+  .title { font-size: 17px; font-weight: 600; color: var(--accent); }
+  .sec { margin: 14px 0 0; font: 600 11px "IBM Plex Mono", ui-monospace, Menlo, monospace; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+</style>
+
+<header class="bar">
+  <div>
+    <h1>Enkazda Hayatta Kal</h1>
+    <p class="sub" id="sub">2+1 daire · 100 m²</p>
+  </div>
+  <div class="seg" role="group" aria-label="Görünüm">
+    <button type="button" data-mode="plan" aria-pressed="false">Plan</button>
+    <button type="button" data-mode="orbit" aria-pressed="true">Dış görünüş</button>
+    <button type="button" data-mode="walk" aria-pressed="false">İçeride yürü</button>
+  </div>
+</header>
+
+<main class="stage with-toggle" id="stage">
+  <canvas id="c" tabindex="0" aria-label="2 artı 1 dairenin üç boyutlu modeli"></canvas>
+  <div id="labels"></div>
+  <p class="hint" id="hint"></p>
+  <div class="cross" id="cross"></div>
+  <div class="prompt" id="prompt"></div>
+  <div class="toast" id="toast"></div>
+  <div class="fade" id="fadeEl"></div>
+  <div id="ez_root" style="display:none">
+    <div class="ezhud">
+      <div class="ezmeters">
+        <div class="ezm"><span>Su</span><div class="ezbar"><i id="ez_bSu" style="background:#2a86e0"></i></div><b id="ez_vSu"></b></div>
+        <div class="ezm"><span>Yiyecek</span><div class="ezbar"><i id="ez_bYi" style="background:#f0901e"></i></div><b id="ez_vYi"></b></div>
+        <div class="ezm"><span>Enerji</span><div class="ezbar"><i id="ez_bEn" style="background:#3fc46a"></i></div><b id="ez_vEn"></b></div>
+      </div>
+      <div class="ezinfo"><div>Enkazda geçen süre: <b id="ez_vT">0 saat</b></div><div>Kurtarma ekibi yaklaşıyor:</div><div class="ezsteps" id="ez_steps"></div><div id="ez_inv" style="margin-top:6px;color:#c9d1dc"></div></div>
+    </div>
+    <div class="ezvw"><button id="ez_vPov">Çocuğun gözünden</button><button id="ez_vOut">Dışarıdan kesit</button></div>
+    <div class="ezcall" id="ez_call"></div>
+    <div class="ezmsg" id="ez_msg"></div>
+    <div class="ezacts"><button id="ez_aSu">Su iç</button><button id="ez_aYe">Ye</button><button id="ez_aDu" class="sig">Düdük çal</button><button id="ez_aVu" class="sig">3 kez vur</button><button id="ez_aBa" class="sig">Bağır</button></div>
+    <div id="ez_fade" class="ezfade"><div id="ez_fadeTxt"></div></div>
+    <div class="ezov" id="ez_ov"><div class="ezbox" id="ez_ovBox"></div></div>
+  </div>
+  <div class="parkcap" id="parkCap"><span>Sarsıntı sona erdi.</span><button type="button" class="btn" id="seeBtn">Sonucu gör</button></div>
+  <div class="alertbox" id="alertBox"><b>DEPREM UYARISI</b><strong>Deprem uyarısı aldın!</strong><span>Evi tahliye etmemiz gerekiyor, HAYDİ çantanı hazırla!</span></div>
+  <div class="hud" id="hud">
+    <div class="pill"><span class="big" id="clock">1:30</span></div>
+    <div style="display:flex;gap:8px">
+      <button type="button" class="pill" id="grabBtn" style="display:none">Tut</button>
+      <button type="button" class="pill" id="throwBtn" style="display:none">Fırlat</button>
+      <button type="button" class="pill" id="bagBtn">🎒 Çanta <span class="big" id="bagN" style="font-size:16px">0</span></button>
+      <button type="button" class="pill" id="finBtn">Bitir</button>
+    </div>
+  </div>
+  <section class="sheet on" id="startSheet">
+    <div class="card">
+      <div class="brandrow"><img class="hlogo" alt="Hayrat Arama Kurtarma" src="" /><h2>Enkazda Hayatta Kal</h2><img class="hlogo" alt="Hayrat Arama Kurtarma" src="" /></div>
+
+      <p>Deprem uyarısı aldın! Sarsıntıdan önce <b>1,5 dakikan</b> var. Evdeki afet çantası malzemelerini topla. Sarsıntı gelince bulunduğun oda yıkılacak ve <b>enkaz altında</b> kalacaksın.</p>
+      <ul class="how">
+        <li>Önce deneme alanında yürümeyi ve eşya toplamayı öğren. Dış kapıdan içeri girince deprem uyarısı anonsu verilir; anons bitince süre başlar.</li>
+        <li>Evdeki tüm odaları gez; imleçle eşyaya nişan alıp <b>Boşluk</b> tuşuna bas (dokunmatikte eşyaya dokun).</li>
+        <li>Enkazda en çok <b>su ve yiyeceğe</b> ihtiyacın olacak: evde birden fazla paket var. Düdük, el feneri ve toz maskesi de hayat kurtarır.</li>
+        <li>Enkaz altında suyunu ve yiyeceğini idareli kullan. Kurtarma ekibi <b>"ses ver"</b> deyince düdük çal ya da 3 kez vur.</li>
+      </ul>
+      <div class="row"><button type="button" class="btn" id="startBtn">Başla</button><button type="button" class="btn ghost" id="vrBtn">VR gözlükte oyna (Meta Quest)</button></div>
+      <p id="vrMsg" style="display:none;margin:10px 0 0;color:#B91C1C;font-size:14px"></p>
+      <details class="credits"><summary>Model kaynakları</summary><p>Modeller (CC BY 4.0, Sketchfab/Objaverse): Tomato Soup Can — m31odyr; Medical Kit — tediuminteractive; Candy Bars — TopazDragon117; Pill Bottle — collinqy; Gas mask Alex — Sketchfab; Radio_VEF202 — egorova.e; jam jar — jwpthecoolguy2; Low Poly Glasses — Liaval; Compass — nemo81; Notebook — _SeF_; Opinel pocket knife — Amelia Rubin; Bottle Of Water — ARCTIC WOLVES; Soap Pump Bottle — FunFant; perfume — Mgabrov; AA Batteries — berzerkey; Coach Whistle — TiimB; Cash bundle — Dekrayzis; Walkie Talkie — nbibby1; High visibilty vest 1 — Issa; Cat Food Bag — jon u; USB Power Adapter — protorenaissance; PowerBank — Zorgot; Swiss Army Knife — Hadrien59; Surgical Mask — GhulamRasool201; Tissue Box — Tomations; Flushable Wipes — TK; Ring Binder — Jura. </p><p>Gerçek ürün taramaları (fener, eldiven, makas, ilaç şişesi, şapka, konsol, saç kurutma, kulaklık, ped, diş fırçası, ruj): Google Research, Scanned Objects dataset, CC BY 4.0 (creativecommons.org/licenses/by/4.0). Bazı 3B modeller CC BY 3.0 lisanslıdır (creativecommons.org/licenses/by/3.0): Blankets — Poly by Google; Time Hotel 5.20 (ID Card) — S. Paul Michael; Notebook — jeremy; Whistle — Rendercore; Oven Glove — Isa Lousberg; Sunglasses — jeremy; Time Hotel 7.08 Folded Map — S. Paul Michael; Pill bottle — Poly by Google; Toilet roll — Poly by Google; Jar of jam — Poly by Google; Rubber boot — Poly by Google; Switch — sugamo; Red Lipstick — Jarlan Perez; Dog bowl — Poly by Google; Money — Rafael; Perfume bottle — Poly by Google; Tissue Box — J-Toastie; AA battery — Poly by Google; clipboard — William Murphy; Baseball cap — jeremy; Solar battery — Poly by Google; Phone charger — moriarty; Walkie talkie — Poly by Google; Bandage — Poly by Google. CC0 modeller: Poly Haven, Kenney, CreativeTrio, Isa Lousberg, MilkAndBanana, MiniPoly, Pichuliru, Quaternius.</p></details>
+    </div>
+  </section>
+  <section class="sheet" id="bagSheet">
+    <div class="card">
+      <h2>Çantandaki eşyalar</h2>
+      <p id="bagEmpty">Çanta henüz boş.</p>
+      <ul class="list" id="bagList"></ul>
+      <div class="row"><button type="button" class="btn" id="bagClose">Devam et</button></div>
+    </div>
+  </section>
+  <section class="sheet" id="res1">
+    <div class="card" id="res1c"></div>
+  </section>
+  <section class="sheet" id="res2">
+    <div class="card" id="res2c"></div>
+  </section>
+  <button type="button" class="toggle" id="cut" aria-pressed="true">Alçak duvar</button>
+  <div class="dpad" id="dpad" hidden>
+    <button type="button" data-act="tl" aria-label="Sola dön">↶</button>
+    <button type="button" data-act="f" aria-label="İleri">↑</button>
+    <button type="button" data-act="tr" aria-label="Sağa dön">↷</button>
+    <button type="button" data-act="l" aria-label="Sola kay">←</button>
+    <button type="button" data-act="b" aria-label="Geri">↓</button>
+    <button type="button" data-act="r" aria-label="Sağa kay">→</button>
+  </div>
+</main>
+
+<nav class="rooms" id="rooms" aria-label="Odalara git"></nav>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="modeller.js"></script>
+
+
+<script src="oyun.js"></script>
+<script src="enkaz.js"></script>
